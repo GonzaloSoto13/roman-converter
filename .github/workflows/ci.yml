@@ -1,0 +1,45 @@
+name: CI/CD for Roman Converter
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test-lint-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: npm install --save-dev eslint mocha chai jsdom
+
+    - name: Run Linter
+      run: npx eslint script.js || true
+
+    - name: Run Tests
+      run: |
+        node -e "
+        const { JSDOM } = require('jsdom');
+        global.window = new JSDOM('<!doctype html><html><body></body></html>').window;
+        global.document = window.document;
+        global.navigator = { userAgent: 'node.js' };
+        global.HTMLElement = window.HTMLElement;
+        require('./script.js');
+        global.chai = require('chai');
+        require('./tests.js');
+        "
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./
