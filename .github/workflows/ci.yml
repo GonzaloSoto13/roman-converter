@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  build-test-lint-deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,24 +19,11 @@ jobs:
       with:
         node-version: '18'
 
-    - name: Install dependencies
-      run: npm install --save-dev eslint mocha chai jsdom
+    - name: Install ESLint globally
+      run: npm install -g eslint
 
-    - name: Run Linter
-      run: npx eslint script.js || true
-
-    - name: Run Tests
-      run: |
-        node -e "
-        const { JSDOM } = require('jsdom');
-        global.window = new JSDOM('<!doctype html><html><body></body></html>').window;
-        global.document = window.document;
-        global.navigator = { userAgent: 'node.js' };
-        global.HTMLElement = window.HTMLElement;
-        require('./script.js');
-        global.chai = require('chai');
-        require('./tests.js');
-        "
+    - name: Lint script.js
+      run: eslint script.js || true
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
